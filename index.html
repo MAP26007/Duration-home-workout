@@ -398,18 +398,10 @@ const n=DB.get('nut');if(n){$('#nw').value=n.w;$('#nh').value=n.h;$('#na').value
 setTimeout(()=>{$('#splash').style.opacity=0;setTimeout(()=>{$('#splash').remove();enter()},600)},2600);
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js');
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBaZfLluY2e_uHLVIIFRyULX3Fs907Jj4",
-    databaseURL: "https://duration-workout-default-rtdb.firebaseio.com"
-  };
-  
-  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  
-  window.db = firebase.database();
-  
-  if (typeof init === 'function') { init(); }
+Promise.race([fetch('config.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}),new Promise(r=>setTimeout(()=>r({}),1500))]).catch(()=>({})).then(j=>{
+  window.CFG = j;
+  if(typeof init==='function') init();
+});
 </script>
  </body>
 </html>
