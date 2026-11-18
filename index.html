@@ -397,11 +397,7 @@ setInterval(()=>{if(!me||!users()[me])return;groupCheck();remind();if(['board','
 const n=DB.get('nut');if(n){$('#nw').value=n.w;$('#nh').value=n.h;$('#na').value=n.a;$('#ng').value=n.g;$('#ns').value=n.s;$('#nv').value=n.v}
 setTimeout(()=>{$('#splash').style.opacity=0;setTimeout(()=>{$('#splash').remove();enter()},600)},2600);
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js');
-<script>
-Promise.race([fetch('config.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}),new Promise(r=>setTimeout(()=>r({}),1500))]).catch(()=>({})).then(j=>{
-  window.CFG = j;
-  if(typeof init==='function') init();
-});
+Promise.race([fetch('config.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}),new Promise(r=>setTimeout(()=>r({}),1500))]).catch(()=>({})).then(j=>{CFG={...j,...DB.get('cfg',{})};init()});
 </script>
- </body>
+</body>
 </html>
