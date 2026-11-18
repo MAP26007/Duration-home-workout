@@ -399,19 +399,5 @@ setTimeout(()=>{$('#splash').style.opacity=0;setTimeout(()=>{$('#splash').remove
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js');
 Promise.race([fetch('config.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}),new Promise(r=>setTimeout(()=>r({}),1500))]).catch(()=>({})).then(j=>{CFG={...j,...DB.get('cfg',{})};init()});
 </script>
- <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBaZfLluYx2e_uHLVIIfRyULX3Fs907Jj4",
-    authDomain: "duration-workout.firebaseapp.com",
-    databaseURL: "https://duration-workout-default-rtdb.firebaseio.com",
-    projectId: "duration-workout"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  const auth = firebase.auth();
-</script>
-</body>
+ </body>
 </html>
