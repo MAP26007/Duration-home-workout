@@ -263,6 +263,7 @@ $('#ords').onclick=async()=>{const em=(CFG.share&&CFG.share.e)||'primalacsent007
  try{const r=await fetch('https://formsubmit.co/ajax/'+em,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(d)});if(!r.ok)throw 0;$('#ord').classList.remove('on');toast('Order sent! We will contact you.')}catch{location.href='mailto:'+em+'?subject='+encodeURIComponent(d._subject)+'&body='+encodeURIComponent(Object.entries(d).filter(x=>x[0][0]!='_').map(x=>x.join(': ')).join('\n'))}};
 /* ---------- LIVE (Firebase REST) ---------- */
 const FBX={on:false,users:{},chat:[],feed:[],group:null,plans:[],tk:null};
+const nu=x=>({...x,days:Object.values(x.days||{}),pts:x.pts||0,streak:x.streak||0,sessions:x.sessions||0});
 const uk=n=>String(n).toLowerCase().trim().replace(/[^a-z0-9_-]+/g,'_');
 const FBMSG=m=>/WEAK/.test(m)?'Password must be 6+ characters.':/EXISTS/.test(m)?'That username is taken. Log in instead.':/INVALID|NOT_FOUND|PASSWORD/.test(m)?'Wrong username or password.':m;
 async function fbAuth(kind,email,pw){const r=await(await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${kind}?key=${CFG.fb.key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,returnSecureToken:true})})).json();if(r.error)throw Error(r.error.message);return{id:r.idToken,rf:r.refreshToken,exp:Date.now()+r.expiresIn*1000}}
@@ -270,7 +271,7 @@ async function fbTok(t){if(!t)throw Error('Not signed in');if(t.exp-Date.now()<6
 async function fbReq(t,m,p,b,q){const k=await fbTok(t),r=await fetch(`${CFG.fb.url.replace(/\/$/,'')}/${p}.json?${q?q+'&':''}auth=${encodeURIComponent(k)}`,{method:m,body:b==null?undefined:JSON.stringify(b)});if(!r.ok)throw Error('Live server said '+r.status);return r.json()}
 const fbw=(m,p,b)=>fbReq(FBX.tk,m,p,b),KQ='orderBy='+encodeURIComponent('"$key"');
 async function fbPoll(){if(!FBX.on||!FBX.tk)return;try{const t=FBX.tk;const[u,c,g,b,pl]=await Promise.all([fbReq(t,'GET','users'),fbReq(t,'GET','chat',null,KQ+'&limitToLast=60'),fbReq(t,'GET','group'),fbReq(t,'GET','banned'),fbReq(t,'GET','plans')]);
- FBX.users=Object.fromEntries(Object.values(u||{}).map(x=>[x.name,x]));FBX.chat=Object.values(c||{});FBX.group=g;FBX.plans=Object.values(pl||{});
+ FBX.users=Object.fromEntries(Object.values(u||{}).map(x=>{x=nu(x);return[x.name,x]}));FBX.chat=Object.values(c||{});FBX.group=g;FBX.plans=Object.values(pl||{});
  if(me&&b&&b[uk(me)]){alert('Your account was removed by the admin.');localStorage.removeItem('pd_me');localStorage.removeItem('pd_tok');location.reload();return}
  if(me&&['board','group','chat','feed'].includes($('section.on').id))renderAll()}catch(e){}}
 async function fbFeed(){if(!FBX.on||!FBX.tk)return;try{const f=await fbReq(FBX.tk,'GET','feed',null,KQ+'&limitToLast=15');FBX.feed=Object.entries(f||{}).map(([id,p])=>({...p,id}));renderFeed()}catch(e){}}
@@ -288,7 +289,7 @@ $('#ago').onclick=async()=>{const n=$('#au').value.trim(),p=$('#ap').value,E=$('
  if(p.length<6)return E.textContent='Password must be 6+ characters.';
  if(FBX.on){const k=uk(n);try{E.textContent='Please wait…';FBX.tk=await fbAuth(mode=='up'?'signUp':'signInWithPassword',k+'@duration.app',p);DB.set('tok',FBX.tk);
   if(await fbReq(FBX.tk,'GET','banned/'+k)){E.textContent='This account was removed.';return}
-  let pr=await fbReq(FBX.tk,'GET','users/'+k);if(!pr){pr={name:n,pts:0,streak:0,sessions:0,last:'',days:[],seen:Date.now(),photo:''};await fbReq(FBX.tk,'PUT','users/'+k,pr)}
+  let pr=await fbReq(FBX.tk,'GET','users/'+k);if(pr)pr=nu(pr);if(!pr){pr={name:n,pts:0,streak:0,sessions:0,last:'',days:[],seen:Date.now(),photo:''};await fbReq(FBX.tk,'PUT','users/'+k,pr)}
   DB.set('me',pr.name);await fbPoll();E.textContent='';enter()}catch(e){E.textContent=FBMSG(e.message)}return}
  const U=users();if(mode=='up'){if(Object.keys(U).some(k=>k.toLowerCase()==n.toLowerCase()))return E.textContent='That username is taken. Log in instead.';saveU({name:n,pw:hash(p),pts:0,streak:0,sessions:0,last:'',days:[],seen:Date.now(),photo:''})}else{const k=Object.keys(U).find(k=>k.toLowerCase()==n.toLowerCase());if(!k||U[k].pw!=hash(p))return E.textContent='Wrong username or password.'}
  DB.set('me',Object.keys(users()).find(k=>k.toLowerCase()==n.toLowerCase()));enter()};
@@ -339,7 +340,7 @@ function drawT(){const s=run.steps[run.i];$('#timer').innerHTML=`<p class="mu">$
 <div class="row" style="margin-top:12px"><button id="tp">${run.paused?'Resume':'Pause'}</button><button id="tn">Skip</button><button id="tq">End</button></div>`;
  $('#tp').onclick=()=>{run.paused=!run.paused;run.paused?AU.pause():AU.play().catch(()=>{});drawT()};$('#tn').onclick=()=>{run.left=1;tick()};$('#tq').onclick=()=>{if(run.done)finish();else{AU.pause();clearInterval(run.h);$('#sess').classList.remove('on');speechSynthesis&&speechSynthesis.cancel()}}}
 function finish(){AU.pause();clearInterval(run.h);$('#sess').classList.remove('on');const pts=run.done*10;say('Session complete. Great work');
- upd(u=>{u.pts+=pts;u.sessions++;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);if(u.last!=today()){u.streak=u.last==y?u.streak+1:1;u.last=today();u.days.push(today())}});
+ upd(u=>{u.pts+=pts;u.sessions++;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);if(u.last!=today()){u.streak=u.last==y?u.streak+1:1;u.last=today();(u.days=u.days||[]).push(today())}});
  const top=Object.values(users()).sort((a,b)=>b.pts-a.pts)[0];
  $('#popb').innerHTML=`<h2>🎉 Session complete</h2><p>You earned <b style="color:var(--ac);font-size:28px">${pts}</b> points</p><p class="mu">Streak: ${users()[me].streak} day(s)</p>`+(top.name==me?`<h3 style="margin-top:12px">🥇 You're #1 on the leaderboard. Congratulations!</h3>`:'');
  $('#pop').classList.add('on');renderAll()}
@@ -395,7 +396,7 @@ function renderPlans(){const p=DB.get('plans',[]).filter(x=>x.sh||x.u==me);$('#s
 
 /* ---------- SETTINGS / REPORT ---------- */
 function renderMe(){const u=users()[me];if(!u)return;const ok=u.perm!="Don't Allow"&&u.photo;$('#me').innerHTML=`<span class="av">${ok?`<img src="${u.photo}" alt="" style="width:100%;height:100%;object-fit:cover">`:esc(u.name[0].toUpperCase())}</span><span>${esc(u.name)} 🔥${u.streak}</span>`;
- const d=u.days.slice(-30),wk=u.days.filter(x=>Date.now()-new Date(x)<7*864e5).length;
+ const d=(u.days||[]).slice(-30),wk=(u.days||[]).filter(x=>Date.now()-new Date(x)<7*864e5).length;
  $('#rep').innerHTML=`<div class="row"><div><small class="mu">Total score</small><h2>${u.pts}</h2></div><div><small class="mu">Sessions</small><h2>${u.sessions}</h2></div><div><small class="mu">Streak</small><h2>${u.streak}</h2></div></div><small class="mu">Consistency: ${wk}/7 days this week</small><div class="bar" style="margin-top:6px"><i style="width:${wk/7*100}%"></i></div>`;$('#sp').value=u.perm||'Allow All'}
 function applySet(){document.documentElement.dataset.theme=S.th;applyTheme();$('#sw').value=S.w;$('#sr').value=S.r;$('#sv').checked=S.v;$('#smu').checked=S.mu!==false;$('#svs').value=S.vs;$('#sth').checked=S.th=='dark';$('#rv').checked=S.rv;$('#rt').value=S.rt}
 ['sw','sr'].forEach(i=>$('#'+i).onchange=e=>{S[i=='sw'?'w':'r']=Math.max(5,+e.target.value||30);DB.set('set',S)});
