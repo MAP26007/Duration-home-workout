@@ -16,3 +16,8 @@ This version stores accounts, chat, scores and group sessions in the browser (`l
 
 ## Editing the app (owner only)
 The public app has no admin features. Use the separate `admin.html` (keep it outside this repo, never upload it). Unlock with your owner password, edit, press **Save**, then **Sync to users**. Sync commits `config.json` (and any uploaded media into `media/`) to this repo via the GitHub API; GitHub Pages republishes in 1-2 minutes. Set it up once in the Sync tab with a fine-grained token limited to this repo (Contents: Read and write). The token is stored only on your device.
+
+## Going live (shared scoreboard, chat, feed, group workouts)
+1. Create a free Firebase project. Add a Realtime Database (locked mode) and enable Authentication > Email/Password.
+2. In `admin.html` > Live, paste the database URL and Web API key, publish these rules: `{"rules":{".read":"auth!=null",".write":"auth!=null"}}`, then Sync to users.
+3. Every account created in the app is then a real shared account.
